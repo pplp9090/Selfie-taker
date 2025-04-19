@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Selfie to Discord Webhook</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    video, canvas {
+      width: 320px;
+      height: 240px;
+      border: 2px solid #444;
+      margin: 10px auto;
+      display: block;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📸 Selfie Uploader</h1>
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <button id="take">Take Selfie</button>
+  <button id="send" style="display:none;">Send to Discord</button>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const takeBtn = document.getElementById('take');
+    const sendBtn = document.getElementById('send');
+    const ctx = canvas.getContext('2d');
+
+    // Start webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Could not access camera: " + err);
+      });
+
+    // Take selfie
+    takeBtn.onclick = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.style.display = 'block';
+      sendBtn.style.display = 'inline-block';
+    };
+
+    // Send to webhook
+    sendBtn.onclick = async () => {
+      const dataURL = canvas.toDataURL('image/png');
+      const blob = await (await fetch(dataURL)).blob();
+
+      const formData = new FormData();
+      formData.append('file', blob, 'selfie.png');
+
+      fetch('https://discord.com/api/webhooks/1363009723242123284/0_otCwZpkH1m58uGpmjQsUl_LADDRqwIAKtlG7OW5blHxcJwaiVeWL-3H4Yg3fl5LElb', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (response.ok) {
+          alert("✅ Selfie sent to Discord!");
+        } else {
+          alert("❌ Failed to send selfie.");
+        }
+      })
+      .catch(err => {
+        alert("Error: " + err);
+      });
+    };
+  </script>
+
+</body>
+</html>
